@@ -18,7 +18,7 @@ int raw_Value = A0;       // Analog sound input
 int calibrationTime = 30;  
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(sensor, INPUT)  ;    // initialize sensor as an input
   pinMode(raw_Value, INPUT);   // Set pin A0 as an input
   pinMode(LEDpin1, OUTPUT);    // RBGLED1 as output
