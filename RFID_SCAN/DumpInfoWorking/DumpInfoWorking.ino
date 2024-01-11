@@ -129,6 +129,8 @@ void DOOR_OPEN() {
       servo.write(0);  // Make servo go to 0 degrees
       delay(5000);
       servo.write(180);  // Make servo go to 180 degrees
+      LEDSTATE = LOW;
+      digitalWrite(LED, LEDSTATE);
       delay(1000);
     }
 
