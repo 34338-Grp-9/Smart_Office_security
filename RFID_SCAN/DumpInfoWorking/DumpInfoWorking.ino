@@ -71,9 +71,8 @@ void setup() {
 void loop() {
   ArduinoCloud.update();
   // Your code here
-  if(!denyEntry){
-    DOOR_OPEN();
-  }
+  DOOR_OPEN();
+
 
 
 }
@@ -104,7 +103,7 @@ void DOOR_OPEN() {
   Serial.println();
   Serial.print("Message : ");
   content.toUpperCase();
-  if (content.substring(1) == "A1 C5 D9 1D") {
+  if ((content.substring(1) == "A1 C5 D9 1D") && !denyEntry) {
     // Card with matching UID
     if (currentMillis - previousMillis >= interval) {
       // save the last time you blinked the LED
