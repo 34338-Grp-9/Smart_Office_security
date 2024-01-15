@@ -20,7 +20,7 @@
 
 
 #define SENSOR_PIN D4 // Motion sensor pin
-
+  
 // things for HW484 sound sensor and RGB LED
 #define RedLED_PIN D8
 #define GreenLED_PIN D7
@@ -46,7 +46,7 @@ void setup() {
   // Defined in thingProperties.h
   initProperties();
   // This delay gives the chance to wait for a Serial Monitor without blocking if none is found
- pinMode(SENSOR_PIN, INPUT)  ;    // initialize sensor as an input
+  pinMode(SENSOR_PIN, INPUT)  ;    // initialize sensor as an input
   pinMode(RAW_VALUE, INPUT);   // Set pin A0 as an input
   pinMode(RedLED_PIN, OUTPUT);    // RBGLED1 as output
   pinMode(GreenLED_PIN, OUTPUT);    // RBGLED2 as output
@@ -160,6 +160,18 @@ void security(){
     startMillis = currentMillis;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
