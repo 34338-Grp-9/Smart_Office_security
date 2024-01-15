@@ -6,7 +6,7 @@
 
   The following variables are automatically generated and updated when changes are made to the Thing
 
-  CloudColor rgb_LED;
+  CloudColoredLight rgb_LED;
   bool currentState;
   bool previousState;
   bool securityActivation;
@@ -52,6 +52,7 @@ void setup() {
   pinMode(GreenLED_PIN, OUTPUT);    // RBGLED2 as output
   pinMode(BlueLED_PIN, OUTPUT);    // RBGLED3 as output
   startMillis = millis();
+  rgb_LED.setSwitch(false);
 
 
   //give the sensor some time to calibrate
@@ -89,10 +90,17 @@ if(securityActivation){
 */
 void onSecurityActivationChange()  {
   // Add your code here to act upon SecurityActivation change
+  rgb_LED.setSwitch(securityActivation);
   
+  //Set Hue/Saturation/brightness
   if(securityActivation){
-    rgb_LED = {0,100,100}; //Set Hue/Saturation/brightness
-  } else rgb_LED = {0,0,0};
+    rgb_LED.setHue(0);
+    rgb_LED.setSaturation(100);
+    rgb_LED.setBrightness(100);
+  } else {
+    rgb_LED.setHue(0);
+    rgb_LED.setSaturation(100);
+    rgb_LED.setBrightness(0);}
   
 }
 
@@ -130,12 +138,20 @@ void security(){
       // For sound level below 100 LED is green
        RED_LEDvalue1 = 0;
        GREEN_LEDvalue2 = 255;
-       rgb_LED = {120,100,100};
+       
+      //Set Hue/Saturation/brightness
+      rgb_LED.setHue(120);
+      rgb_LED.setSaturation(100);
+      rgb_LED.setBrightness(100);
+       
       } else {
        // Above 100, LED goes red
        RED_LEDvalue1 = 255;
        GREEN_LEDvalue2 = 0;
-       rgb_LED = {0,100,100};
+      //Set Hue/Saturation/brightness
+      rgb_LED.setHue(0);
+      rgb_LED.setSaturation(100);
+      rgb_LED.setBrightness(100);
   }
     // Write the values to the LED pins
     analogWrite(RedLED_PIN, RED_LEDvalue1); // write to red
@@ -144,6 +160,7 @@ void security(){
     startMillis = currentMillis;
   }
 }
+
 
 
 
