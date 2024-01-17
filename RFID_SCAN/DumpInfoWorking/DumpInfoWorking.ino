@@ -19,14 +19,12 @@
 #include "MFRC522.h"
 #include "Servo.h"
 
-#define RST_PIN D1 // D1    // Configurable, see typical pin layout above
-#define SS_PIN D2  // D2 // Configurable, see typical pin layout above
-#define Buzzer D8  // D8
-#define SERVO_PIN 2
-#define PIR_SENSOR D3
+#define RST_PIN D1   // D1    // Configurable, see typical pin layout above
+#define SS_PIN D2    // D2 // Configurable, see typical pin layout above
+#define BUZZER D8    // D8
+#define SERVO_PIN D4 // D4
+#define LED D0
 
-const int LED = D0;
-int LEDSTATE = 0;
 unsigned long previousMillis = 0;
 unsigned long interval = 1000;
 
@@ -46,8 +44,8 @@ void setup()
   // Inititilize MFRC
   SPI.begin();        // Init SPI bus
   mfrc522.PCD_Init(); // Init MFRC522
-  delay(4);           // Optional delay. Some board do need more time after init to be ready, see Readme¨
-  pinMode(Buzzer, OUTPUT);
+
+  pinMode(BUZZER, OUTPUT);
   servo.attach(SERVO_PIN);
   pinMode(LED, OUTPUT);
   servo.write(0);
@@ -92,7 +90,7 @@ void DOOR_OPEN()
 
   Serial.print("UID tag :");
   String content = "";
-  byte letter;
+
   for (byte i = 0; i < mfrc522.uid.size; i++)
   {
     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
