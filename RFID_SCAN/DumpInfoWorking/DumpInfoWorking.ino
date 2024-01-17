@@ -42,7 +42,8 @@ Servo servo;
 NTPClient timeClient(ntpUDP, "dk.pool.ntp.org", UTC_PLUS_ONE);
 MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
 Firebase firebase(REFERENCE_URL);  //firebase instance
-
+String UID, name;
+int value_clock;
 
 void setup() {
   Serial.begin(115200);
@@ -65,19 +66,17 @@ void setup() {
     Serial.print(".");
   }
 
-  Serial.println("");
-  Serial.println("WiFi Connected");
+  timeClient.begin();
 
   // Print the IP address
+  Serial.println("");
+  Serial.println("WiFi Connected");
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
   digitalWrite(LED_BUILTIN, HIGH);
-
-  timeClient.begin();
 }
 
 void loop() {
-
   DOOR_OPEN();
   timeClient.update();
 }
@@ -85,7 +84,6 @@ void loop() {
 
 void DOOR_OPEN() {
   unsigned long currentMillis = millis();
-
 
   // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
   if (!mfrc522.PICC_IsNewCardPresent()) {
@@ -96,26 +94,29 @@ void DOOR_OPEN() {
   if (!mfrc522.PICC_ReadCardSerial()) {
     return;
   }
-
-  String UID = "";
-  byte letter;
+  UID = "";
   for (byte i = 0; i < mfrc522.uid.size; i++) {
     UID.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : ""));
     UID.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
   UID.toUpperCase();
 
-  String Name = firebase.getString(UID + "/Name");
+  name = firebase.getString(UID + "/Name");
+  value_clock = firebase.getInt(UID + "/Clock");
 
   /*
-  ul is what firebase registeres when a tag that is not from the database.
+  ul is what firebase registeres when a scanned UID is not from the database. 
   the getString calls out our databse to check if the scanned uid is not ul and from the database.
   */
   Serial.print("Querying for UID: ");
   Serial.println(UID);
-  if (firebase.getString(UID) != "ul" && firebase.getInt(UID + "/Clock") == 0) {
+  if (firebase.getString(UID) != "ul" && value_clock == 0) {
 
-    // Card with matching UID
+    firebase.setInt(UID + "/Clock", 1);
+    firebase.pushString("Timestamp/" + name + "/Clockin", timeClient.getFormattedTime());
+    Serial.println(name);
+    Serial.println("Logged ind");
+
     if (currentMillis - previousMillis >= interval) {
       // save the last time you blinked the LED
       previousMillis = currentMillis;
@@ -123,9 +124,9 @@ void DOOR_OPEN() {
 
       // set the LED with the ledState of the variable:
       digitalWrite(LED, LEDSTATE);
-      servo.write(180);  // Make servo go to 0 degrees
+      servo.write(180);  // Make servo go to 180 degrees
       delay(5000);
-      servo.write(0);  // Make servo go to 180 degrees
+      servo.write(0);  // Make servo go to 0 degrees
       LEDSTATE = LOW;
       digitalWrite(LED, LEDSTATE);
       // if the LED is off turn it on and vice-versa:
@@ -134,17 +135,13 @@ void DOOR_OPEN() {
       } else {
         LEDSTATE = LOW;
       }
-      Serial.println(firebase.getString(UID + "/Name"));
-      firebase.setInt(UID + "/Clock", 1);
-      firebase.pushString("Timestamp/" + Name + "/Clockin", timeClient.getFormattedTime());
-      Serial.println("Logged ind");
     }
 
 
-  } else if (firebase.getInt(UID + "/Clock") == 1) {
-    Serial.println(firebase.getString(UID + "/Name"));
-    firebase.pushString("Timestamp/" + Name + "/Clockout", timeClient.getFormattedTime());
+  } else if (value_clock == 1) {
+    firebase.pushString("Timestamp/" + name + "/Clockout", timeClient.getFormattedTime());
     firebase.setInt(UID + "/Clock", 0);
+    Serial.println(name);
     Serial.println("Logged out");
 
 
