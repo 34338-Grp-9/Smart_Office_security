@@ -8,9 +8,11 @@ SPI SCK = D5
 */
 #include <ESP8266Firebase.h>  //Library by https://github.com/Rupakpoddar/ESP8266Firebase
 #include <ESP8266WiFi.h>
+#include <NTPClient.h>  //Library by https://github.com/arduino-libraries/NTPClient/
 #include <Servo.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include <WiFiUdp.h>
 
 //Our electronics
 #define RST_PIN D1   //D1
@@ -20,20 +22,27 @@ SPI SCK = D5
 #define LED D0       //D0
 
 //Wifi
-#define SSID "Simsek"                                                                        // SSID
+#define SSID "simsek"                                                                        // SSID
 #define PASSWORD "Yavuz112"                                                                  // Password
 #define REFERENCE_URL "https://proj1-2189f-default-rtdb.europe-west1.firebasedatabase.app/"  // Firebase reference URL
+
+
 
 
 int LEDSTATE = 0;
 unsigned long previousMillis = 0;
 unsigned long interval = 1000;
 
+//UTC+1
+const long UTC_PLUS_ONE = 3600;
 
 
+WiFiUDP ntpUDP;
+Servo servo;
+NTPClient timeClient(ntpUDP, "dk.pool.ntp.org", UTC_PLUS_ONE);
 MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
 Firebase firebase(REFERENCE_URL);  //firebase instance
-Servo servo;
+
 
 void setup() {
   Serial.begin(115200);
@@ -63,15 +72,20 @@ void setup() {
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
   digitalWrite(LED_BUILTIN, HIGH);
+
+  timeClient.begin();
 }
 
 void loop() {
+
   DOOR_OPEN();
+  timeClient.update();
 }
 
 
 void DOOR_OPEN() {
   unsigned long currentMillis = millis();
+
 
   // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
   if (!mfrc522.PICC_IsNewCardPresent()) {
@@ -91,8 +105,7 @@ void DOOR_OPEN() {
   }
   UID.toUpperCase();
 
-  //defining a string to print out the user of the scanned UID
-  String UIDPrint = firebase.getString("users/" + UID);
+  String Name = firebase.getString(UID + "/Name");
 
   /*
   ul is what firebase registeres when a tag that is not from the database.
@@ -100,31 +113,40 @@ void DOOR_OPEN() {
   */
   Serial.print("Querying for UID: ");
   Serial.println(UID);
-  if (firebase.getString("users/" + UID) != "ul") {
+  if (firebase.getString(UID) != "ul" && firebase.getInt(UID + "/Clock") == 0) {
+
     // Card with matching UID
     if (currentMillis - previousMillis >= interval) {
       // save the last time you blinked the LED
       previousMillis = currentMillis;
       tone(BUZZER, 440, 500);  // Play tone
 
+      // set the LED with the ledState of the variable:
+      digitalWrite(LED, LEDSTATE);
+      servo.write(180);  // Make servo go to 0 degrees
+      delay(5000);
+      servo.write(0);  // Make servo go to 180 degrees
+      LEDSTATE = LOW;
+      digitalWrite(LED, LEDSTATE);
       // if the LED is off turn it on and vice-versa:
       if (LEDSTATE == LOW) {
         LEDSTATE = HIGH;
       } else {
         LEDSTATE = LOW;
       }
-      //Prints user of the UID
-      Serial.print("User: ");
-      Serial.println(UIDPrint);
-      // set the LED with the ledState of the variable:
-      digitalWrite(LED, LEDSTATE);
-      servo.write(0);  // Make servo go to 0 degrees
-      delay(5000);
-      servo.write(180);  // Make servo go to 180 degrees
-      LEDSTATE = LOW;
-      digitalWrite(LED, LEDSTATE);
-      delay(1000);
+      Serial.println(firebase.getString(UID + "/Name"));
+      firebase.setInt(UID + "/Clock", 1);
+      firebase.pushString("Timestamp/" + Name + "/Clockin", timeClient.getFormattedTime());
+      Serial.println("Logged ind");
     }
+
+
+  } else if (firebase.getInt(UID + "/Clock") == 1) {
+    Serial.println(firebase.getString(UID + "/Name"));
+    firebase.pushString("Timestamp/" + Name + "/Clockout", timeClient.getFormattedTime());
+    firebase.setInt(UID + "/Clock", 0);
+    Serial.println("Logged out");
+
 
   } else {
     // Card with non-matching UID
