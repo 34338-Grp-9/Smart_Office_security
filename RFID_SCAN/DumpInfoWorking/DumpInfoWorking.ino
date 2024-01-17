@@ -48,8 +48,6 @@ Servo servo;
 NTPClient timeClient(ntpUDP, "dk.pool.ntp.org", UTC_PLUS_ONE);
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance
 Firebase firebase(REFERENCE_URL); // firebase instance
-String UID, name;
-int value_clock;
 
 void setup()
 {
@@ -111,7 +109,7 @@ void DOOR_OPEN()
     return;
   }
 
-  UID = "";
+  String UID = "";
   for (byte i = 0; i < mfrc522.uid.size; i++)
   {
     UID.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : ""));
@@ -119,8 +117,8 @@ void DOOR_OPEN()
   }
   UID.toUpperCase();
 
-  name = firebase.getString(UID + "/Name");
-  value_clock = firebase.getInt(UID + "/Clock");
+  String name = firebase.getString(UID + "/Name");
+  long value_clock = firebase.getInt(UID + "/Clock");
 
   /*
   ul is what firebase registeres when a scanned UID is not from the database.
