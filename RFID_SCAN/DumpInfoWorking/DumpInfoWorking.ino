@@ -19,9 +19,9 @@
 #include "MFRC522.h"
 #include "Servo.h"
 
-#define RST_PIN D1  //D1    // Configurable, see typical pin layout above
-#define SS_PIN D2   //D2 // Configurable, see typical pin layout above
-#define Buzzer D8   //D8
+#define RST_PIN D1 // D1    // Configurable, see typical pin layout above
+#define SS_PIN D2  // D2 // Configurable, see typical pin layout above
+#define Buzzer D8  // D8
 #define SERVO_PIN 2
 #define PIR_SENSOR D3
 
@@ -30,12 +30,11 @@ int LEDSTATE = 0;
 unsigned long previousMillis = 0;
 unsigned long interval = 1000;
 
-
-
-MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
+MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance
 Servo servo;
 
-void setup() {
+void setup()
+{
   // Initialize serial and wait for port to open:
   Serial.begin(115200);
   // This delay gives the chance to wait for a Serial Monitor without blocking if none is found
@@ -43,16 +42,16 @@ void setup() {
 
   // Defined in thingProperties.h
   initProperties();
-  
-  //Inititilize MFRC
-  SPI.begin();         // Init SPI bus
-  mfrc522.PCD_Init();  // Init MFRC522
-  delay(4);            // Optional delay. Some board do need more time after init to be ready, see Readme¨
+
+  // Inititilize MFRC
+  SPI.begin();        // Init SPI bus
+  mfrc522.PCD_Init(); // Init MFRC522
+  delay(4);           // Optional delay. Some board do need more time after init to be ready, see Readme¨
   pinMode(Buzzer, OUTPUT);
   servo.attach(SERVO_PIN);
   pinMode(LED, OUTPUT);
   servo.write(0);
-  mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card Reader details
+  mfrc522.PCD_DumpVersionToSerial(); // Show details of PCD - MFRC522 Card Reader details
   Serial.println("Bro, det virker");
   // Connect to Arduino IoT Cloud
   ArduinoCloud.begin(ArduinoIoTPreferredConnection);
@@ -68,33 +67,34 @@ void setup() {
   ArduinoCloud.printDebugInfo();
 }
 
-void loop() {
+void loop()
+{
   ArduinoCloud.update();
   // Your code here
   DOOR_OPEN();
-
-
-
 }
 
-
-void DOOR_OPEN() {
+void DOOR_OPEN()
+{
   unsigned long currentMillis = millis();
 
   // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
-  if (!mfrc522.PICC_IsNewCardPresent()) {
+  if (!mfrc522.PICC_IsNewCardPresent())
+  {
     return;
   }
 
   // Select one of the cards
-  if (!mfrc522.PICC_ReadCardSerial()) {
+  if (!mfrc522.PICC_ReadCardSerial())
+  {
     return;
   }
 
   Serial.print("UID tag :");
   String content = "";
   byte letter;
-  for (byte i = 0; i < mfrc522.uid.size; i++) {
+  for (byte i = 0; i < mfrc522.uid.size; i++)
+  {
     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
     Serial.print(mfrc522.uid.uidByte[i], HEX);
     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
@@ -103,49 +103,54 @@ void DOOR_OPEN() {
   Serial.println();
   Serial.print("Message : ");
   content.toUpperCase();
-  if ((content.substring(1) == "A1 C5 D9 1D") && !denyEntry) {
+  if ((content.substring(1) == "A1 C5 D9 1D") && !denyEntry)
+  {
     // Card with matching UID
-    if (currentMillis - previousMillis >= interval) {
+    if (currentMillis - previousMillis >= interval)
+    {
       // save the last time you blinked the LED
       previousMillis = currentMillis;
-      tone(Buzzer, 440, 500);  // Play tone
-      Serial.println("brooo");
-      // if the LED is off turn it on and vice-versa:
-      if (LEDSTATE == LOW) {
-        LEDSTATE = HIGH;
-      } else {
-        LEDSTATE = LOW;
-      }
-      // set the LED with the ledState of the variable:
-      digitalWrite(LED, LEDSTATE);
-      servo.write(0);  // Make servo go to 0 degrees
-      delay(5000);
-      servo.write(180); // Make servo go to 180 degrees
-      LEDSTATE = LOW;
-      digitalWrite(LED,LEDSTATE);
-      delay(1000);
+      tone(Buzzer, 440, 500); // Play tone
+      user_scan = "Login: A1 C5 D9 1D: Access Granted";
+      ledAccess();
     }
-
-  } else {
+  }
+  else
+  {
     // Card with non-matching UID
     tone(Buzzer, 200, 500);
+    user_scan = "Access denied";
   }
 }
-
 
 /*
   Since ActivateSecurity is READ_WRITE variable, onActivateSecurityChange() is
   executed every time a new value is received from IoT Cloud.
 */
-void onActivateSecurityChange()  {
+void onActivateSecurityChange()
+{
   // Add your code here to act upon ActivateSecurity change
-  Serial.println("deny Entry change");
-  denyEntry = !denyEntry;
+  Serial.print("deny Entry change: ");
+  if (activateSecurity)
+  {
+    denyEntry = true;
+  }
+  else
+  {
+    denyEntry = false;
+  }
+  Serial.println(denyEntry);
   // (activateSecurity) ? servo.write(130) : servo.write(0) ;
 }
 
-
-
-
-
-
+void ledAccess()
+{
+  lEDSTATE = HIGH;
+  digitalWrite(LED, lEDSTATE);
+  servo.write(130); // Make servo go to 0 degrees
+  delay(5000);
+  servo.write(0); // Make servo go to 180 degrees
+  lEDSTATE = LOW;
+  digitalWrite(LED, lEDSTATE);
+  delay(1000);
+}
