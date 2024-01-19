@@ -14,7 +14,7 @@
   These functions are generated with the Thing and added at the end of this sketch.
 */
 
-#include "thingProperties.h"
+#include "chipThingProperties.h"
 #include "SPI.h"
 #include "MFRC522.h"
 #include "Servo.h"
@@ -31,8 +31,8 @@ unsigned long interval = 1000;
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance
 Servo servo;
 NTPClient timeClient(ntpUDP, "dk.pool.ntp.org", UTC_PLUS_ONE);
-MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
-Firebase firebase(REFERENCE_URL);  //firebase instance
+MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance
+Firebase firebase(REFERENCE_URL); // firebase instance
 String UID, name;
 int value_clock;
 
